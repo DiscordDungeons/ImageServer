@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"discorddungeons.me/imageserver/iql"
 	"github.com/joho/godotenv"
@@ -28,41 +27,68 @@ func main() {
 		serverPort = fmt.Sprintf(":%s", serverPort)
 	}
 
-	v, err := iql.Parse([]byte("4085551212"))
+	fmt.Print(iql.AS)
 
-	if err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Println(v)
-	}
+	// scanner := bufio.NewScanner(os.Stdin)
+	// for scanner.Scan() {
+	// 	fmt.Println(scanner.Text())
+	// }
 
-	http.HandleFunc("/", handler)
+	// if err := scanner.Err(); err != nil {
+	// 	log.Println(err)
+	// }
 
-	go func() {
-		for {
-			time.Sleep(time.Second)
+	// lexer := iql.
 
-			log.Println("[ImageServer] Checking if server's started")
+	// v := lexer.Lex(iql.yySymType)
 
-			resp, err := http.Get(fmt.Sprintf("http://localhost%s", serverPort))
+	// if err != nil {
+	// 	log.Fatal(err)
+	// } else {
+	// 	fmt.Println(v)
+	// }
 
-			if err != nil {
-				log.Println("Failed:", err)
-				continue
-			}
-			resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				log.Println("Not OK:", resp.StatusCode)
-				continue
-			}
+	// lexer := iql.NewLexer(os.Stdin)
 
-			// Reached this point: server is up and running.
-			break
-		}
+	// iql.yyParse(lexer)
 
-		log.Printf("[ImageServer] Listening on port %s", serverPort)
-	}()
+	//yyParse(NewLexer(os.Stdin))
 
-	log.Println("[ImageServer] Starting server...")
-	log.Fatal(http.ListenAndServe(serverPort, nil))
+	// v, err := iql.Parse([]byte("LOAD IMAGE FROM URL https://res.discorddungeons.me/images/achievements/killimanjaro/1.png AS ach_image;"))
+
+	// if err != nil {
+	// 	log.Fatal(err)
+	// } else {
+	// 	fmt.Println(v)
+	// }
+
+	// http.HandleFunc("/", handler)
+
+	// go func() {
+	// 	for {
+	// 		time.Sleep(time.Second)
+
+	// 		log.Println("[ImageServer] Checking if server's started")
+
+	// 		resp, err := http.Get(fmt.Sprintf("http://localhost%s", serverPort))
+
+	// 		if err != nil {
+	// 			log.Println("Failed:", err)
+	// 			continue
+	// 		}
+	// 		resp.Body.Close()
+	// 		if resp.StatusCode != http.StatusOK {
+	// 			log.Println("Not OK:", resp.StatusCode)
+	// 			continue
+	// 		}
+
+	// 		// Reached this point: server is up and running.
+	// 		break
+	// 	}
+
+	// 	log.Printf("[ImageServer] Listening on port %s", serverPort)
+	// }()
+
+	// log.Println("[ImageServer] Starting server...")
+	// log.Fatal(http.ListenAndServe(serverPort, nil))
 }
