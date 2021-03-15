@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,12 +28,20 @@ func main() {
 		serverPort = fmt.Sprintf(":%s", serverPort)
 	}
 
-	fmt.Print(iql.AS)
+	scanner := bufio.NewScanner(os.Stdin)
+	code := ""
 
-	// scanner := bufio.NewScanner(os.Stdin)
-	// for scanner.Scan() {
-	// 	fmt.Println(scanner.Text())
-	// }
+	for scanner.Scan() {
+		code += scanner.Text()
+	}
+
+	iqlScanner := iql.NewScanner(code)
+
+	tokens := iqlScanner.ScanTokens()
+
+	for _, token := range tokens {
+		fmt.Println(token)
+	}
 
 	// if err := scanner.Err(); err != nil {
 	// 	log.Println(err)

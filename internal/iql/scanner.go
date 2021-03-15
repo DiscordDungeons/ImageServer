@@ -2,6 +2,7 @@ package iql
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -15,37 +16,39 @@ type Scanner struct {
 	keywords map[string]TokenType
 }
 
-func New(source string) Scanner {
-	return Scanner{
+func NewScanner(source string) *Scanner {
+	return &Scanner{
 		source: source,
 		keywords: map[string]TokenType{
-			"as": AS,
+			"AS":    TokenTypes.AS,
+			"LOAD":  TokenTypes.LOAD,
+			"IMAGE": TokenTypes.IMAGE,
 		},
 	}
 }
 
-func (scanner *Scanner) isAtEnd() bool {
+func (scanner *Scanner) IsAtEnd() bool {
 	return scanner.current >= len(scanner.source)
 }
 
-func (scanner *Scanner) advance() rune {
+func (scanner *Scanner) Advance() rune {
 	scanner.current++
 
 	return []rune(scanner.source)[scanner.current-1]
 }
 
-func (scanner *Scanner) addToken(tokenType TokenType, literal Literal) {
+func (scanner *Scanner) AddToken(tokenType TokenType, literal Literal) {
 	text := scanner.source[scanner.start:scanner.current]
 
 	scanner.tokens = append(scanner.tokens, Token{tokenType: tokenType, lexeme: text, literal: literal, line: scanner.line})
 }
 
-func (scanner *Scanner) match(expected string) bool {
-	if scanner.isAtEnd() {
+func (scanner *Scanner) Match(expected rune) bool {
+	if scanner.IsAtEnd() {
 		return false
 	}
 
-	currentChar := string([]rune(scanner.source)[scanner.current])
+	currentChar := []rune(scanner.source)[scanner.current]
 
 	if currentChar != expected {
 		return false
@@ -56,40 +59,40 @@ func (scanner *Scanner) match(expected string) bool {
 	return true
 }
 
-func (scanner *Scanner) peek() rune {
-	if scanner.isAtEnd() {
+func (scanner *Scanner) Peek() rune {
+	if scanner.IsAtEnd() {
 		return rune(0)
 	}
 
 	return []rune(scanner.source)[scanner.current]
 }
 
-func (scanner *Scanner) string() error {
-	for scanner.peek() != '"' && !scanner.isAtEnd() {
-		if scanner.peek() == '\n' {
+func (scanner *Scanner) String() error {
+	for scanner.Peek() != '"' && !scanner.IsAtEnd() {
+		if scanner.Peek() == '\n' {
 			scanner.line++
 		}
-		scanner.advance()
+		scanner.Advance()
 	}
 
-	if scanner.isAtEnd() {
-		return errors.New("Unterminated string.")
+	if scanner.IsAtEnd() {
+		return errors.New("unterminated string")
 	}
 
 	// The closing "
-	scanner.advance()
+	scanner.Advance()
 
 	// Trim surrounding quotes
 	value := string([]rune(scanner.source)[scanner.start+1 : scanner.current-1])
 
-	newLiteral := Literal{strVal: value}
+	newLiteral := Literal{strVal: value, lType: LiteralTypes.STRING_LITERAL}
 
-	scanner.addToken(STRING, newLiteral)
+	scanner.AddToken(TokenTypes.STRING, newLiteral)
 
 	return nil
 }
 
-func (scanner *Scanner) isDigit(c string) bool {
+func (scanner *Scanner) IsDigit(c string) bool {
 	n, err := strconv.Atoi(c)
 
 	if err != nil {
@@ -99,13 +102,13 @@ func (scanner *Scanner) isDigit(c string) bool {
 	return n >= 0 && n <= 9
 }
 
-func (scanner *Scanner) isRuneDigit(c rune) bool {
+func (scanner *Scanner) IsRuneDigit(c rune) bool {
 	n := int(c)
 
 	return n >= 0 && n <= 9
 }
 
-func (scanner *Scanner) peekNext() rune {
+func (scanner *Scanner) PeekNext() rune {
 	if scanner.current+1 > len(scanner.source) {
 		return rune(0)
 	}
@@ -113,117 +116,151 @@ func (scanner *Scanner) peekNext() rune {
 	return []rune(scanner.source)[scanner.current+1]
 }
 
-func (scanner *Scanner) number() error {
-	for scanner.isRuneDigit(scanner.peek()) {
-		scanner.advance()
+func (scanner *Scanner) Number() error {
+	for scanner.IsRuneDigit(scanner.Peek()) {
+		scanner.Advance()
 	}
 
 	// Look for a fractional part
-	if scanner.peek() == '.' && scanner.isRuneDigit(scanner.peekNext()) {
+	if scanner.Peek() == '.' && scanner.IsRuneDigit(scanner.PeekNext()) {
 		// Consume the "."
 
-		scanner.advance()
+		scanner.Advance()
 
-		for scanner.isRuneDigit(scanner.peek()) {
-			scanner.advance()
+		for scanner.IsRuneDigit(scanner.Peek()) {
+			scanner.Advance()
 		}
 	}
 
 	f, err := strconv.ParseFloat(scanner.source[scanner.start:scanner.current], 64)
 
 	if err != nil {
-		return errors.New("Invalid float.")
+		return errors.New("invalid float")
 	}
 
-	newLiteral := Literal{float64Val: f}
+	newLiteral := Literal{float64Val: f, lType: LiteralTypes.FLOAT64_LITERAL}
 
-	scanner.addToken(NUMBER, newLiteral)
+	scanner.AddToken(TokenTypes.NUMBER, newLiteral)
 
 	return nil
 }
 
-func (scanner *Scanner) isAlpha(c rune) bool {
+func (scanner *Scanner) IsAlpha(c rune) bool {
 	return (c >= 'a' && c <= 'z') ||
 		(c >= 'A' && c <= 'Z') ||
 		c == '_'
 }
 
-func (scanner *Scanner) isAlphaNumberic(c rune) bool {
-	return scanner.isAlpha(c) || scanner.isRuneDigit(c)
+func (scanner *Scanner) IsAlphaNumberic(c rune) bool {
+	return scanner.IsAlpha(c) || scanner.IsRuneDigit(c)
 }
 
-func (scanner *Scanner) identifier() {
-	for scanner.isAlphaNumberic(scanner.peek()) {
-		scanner.advance()
+func (scanner *Scanner) Identifier() {
+	for scanner.IsAlphaNumberic(scanner.Peek()) {
+		scanner.Advance()
 	}
+
+	println("scanner.source: " + scanner.source)
 
 	text := scanner.source[scanner.start:scanner.current]
 
+	fmt.Println(fmt.Printf("Text is %s | string: %s", text, string(text)))
+
+	fmt.Println("Keywords ", scanner.keywords)
+
 	tokenType, ok := scanner.keywords[text]
 
+	fmt.Printf("tokenType: %d OK: %t\n", tokenType, ok)
+
 	if !ok {
-		tokenType = IDENTIFIER
+		tokenType = TokenTypes.IDENTIFIER
 	}
 
-	scanner.addToken(tokenType, Literal{})
+	scanner.AddToken(tokenType, Literal{})
 }
 
-func (scanner *Scanner) scanToken () {
-	c := scanner.advance()
+func (scanner *Scanner) ScanToken() error {
+	c := scanner.Advance()
 
-	switch (c) {
-		case '(': scanner.addToken(LEFT_PAREN, null); break
-		case ')': scanner.addToken(RIGHT_PAREN, null); break
-		case '{': scanner.addToken(LEFT_BRACE, null); break
-		case '}': scanner.addToken(RIGHT_BRACE, null); break
-		case ',': scanner.addToken(COMMA, null); break
-		case '.': scanner.addToken(DOT, null); break
-		case '-': scanner.addToken(MINUS, null); break
-		case '+': scanner.addToken(PLUS, null); break
-		case ';': scanner.addToken(SEMICOLON, null); break
-		case '*': scanner.addToken(STAR, null); break
-		case '$': scanner.addToken(DOLLAR, null); break
-		case '!':
-			scanner.addToken(scanner.match('=') ? BANG_EQUAL : BANG, null);
-			break
-		case '=':
-			scanner.addToken(scanner.match('=') ? TokenType.EQUAL_EQUAL : TokenType.EQUAL, null);
-			break
-		case '<':
-			scanner.addToken(scanner.match('=') ? TokenType.LESS_EQUAL : TokenType.LESS, null);
-			break
-		case '>':
-			scanner.addToken(scanner.match('=') ? TokenType.GREATER_EQUAL : TokenType.GREATER, null);
-			break;
-		case '/':
-			if (scanner.match('/')) {
-				// A comment goes until the end of the line.
-				while (scanner.peek() != '\n' && !scanner.isAtEnd) scanner.advance()
-			} else {
-				scanner.addToken(TokenType.SLASH, null)
+	fmt.Println("C: " + string(c))
+
+	switch c {
+	case '(':
+		scanner.AddToken(TokenTypes.LEFT_PAREN, Literal{})
+	case ')':
+		scanner.AddToken(TokenTypes.RIGHT_PAREN, Literal{})
+	case '{':
+		scanner.AddToken(TokenTypes.LEFT_BRACE, Literal{})
+	case '}':
+		scanner.AddToken(TokenTypes.RIGHT_BRACE, Literal{})
+	case ',':
+		scanner.AddToken(TokenTypes.COMMA, Literal{})
+	case '.':
+		scanner.AddToken(TokenTypes.DOT, Literal{})
+	case '-':
+		scanner.AddToken(TokenTypes.MINUS, Literal{})
+	case '+':
+		scanner.AddToken(TokenTypes.PLUS, Literal{})
+	case ';':
+		scanner.AddToken(TokenTypes.SEMICOLON, Literal{})
+	case '*':
+		scanner.AddToken(TokenTypes.STAR, Literal{})
+	case '$':
+		scanner.AddToken(TokenTypes.DOLLAR, Literal{})
+	case '!':
+		scanner.AddToken((map[bool]TokenType{true: TokenTypes.BANG_EQUAL, false: TokenTypes.BANG})[scanner.Match('=')], Literal{})
+	case '=':
+		scanner.AddToken((map[bool]TokenType{true: TokenTypes.EQUAL_EQUAL, false: TokenTypes.EQUAL})[scanner.Match('=')], Literal{})
+	case '<':
+		scanner.AddToken((map[bool]TokenType{true: TokenTypes.LESS_EQUAL, false: TokenTypes.LESS})[scanner.Match('=')], Literal{})
+	case '>':
+		scanner.AddToken((map[bool]TokenType{true: TokenTypes.GREATER_EQUAL, false: TokenTypes.GREATER})[scanner.Match('=')], Literal{})
+	case '/':
+		if scanner.Match('/') {
+			// A comment goes until the end of the line.
+			for scanner.Peek() != '\n' && !scanner.IsAtEnd() {
+				scanner.Advance()
 			}
-			break
-		case ' ':
-		case '\r':
-		case '\t':
-			// Ignore whitespace.
-			break
-	
-		case '\n':
-			scanner.line++
-			break
-		
-		case '"':
-			scanner.string()
-			break
-	
-		default:
-			if (scanner.isDigit(c)) {
-				scanner.number()
-			} else if (scanner.isAlpha(c)) {
-				scanner.identifier()
-			} else {
-				TagScript.error(scanner.line, "Unexpected character")
-			}
+		} else {
+			scanner.AddToken(TokenTypes.SLASH, Literal{})
+		}
+
+	case ' ':
+	case '\r':
+	case '\t':
+		// Ignore whitespace.
+
+	case '\n':
+		scanner.line++
+
+	case '"':
+		scanner.String()
+
+	default:
+		if scanner.IsRuneDigit(c) {
+			scanner.Number()
+		} else if scanner.IsAlpha(c) {
+			scanner.Identifier()
+		} else {
+			return errors.New("unexpected character")
+		}
 	}
+
+	return nil
+}
+
+func (scanner *Scanner) ScanTokens() []Token {
+	for !scanner.IsAtEnd() {
+		scanner.start = scanner.current
+		scanner.ScanToken()
+	}
+
+	scanner.tokens = append(scanner.tokens, Token{
+		tokenType: TokenTypes.EOF,
+		lexeme:    "",
+		literal:   Literal{},
+		line:      scanner.line,
+	})
+
+	return scanner.tokens
 }
