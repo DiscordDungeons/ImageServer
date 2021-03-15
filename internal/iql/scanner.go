@@ -20,9 +20,15 @@ func NewScanner(source string) *Scanner {
 	return &Scanner{
 		source: source,
 		keywords: map[string]TokenType{
-			"AS":    TokenTypes.AS,
-			"LOAD":  TokenTypes.LOAD,
-			"IMAGE": TokenTypes.IMAGE,
+			"LOAD":      TokenTypes.LOAD,
+			"IMAGE":     TokenTypes.IMAGE,
+			"FROM":      TokenTypes.FROM,
+			"URL":       TokenTypes.URL,
+			"AS":        TokenTypes.AS,
+			"GENERATE":  TokenTypes.GENERATE,
+			"WITH":      TokenTypes.WITH,
+			"SET":       TokenTypes.SET,
+			"GRAYSCALE": TokenTypes.GRAYSCALE,
 		},
 	}
 }
