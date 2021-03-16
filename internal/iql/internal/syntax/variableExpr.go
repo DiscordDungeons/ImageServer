@@ -4,17 +4,17 @@ import (
 	iqlSchema "discorddungeons.me/imageserver/iql/schema"
 )
 
-type Variable struct {
+type VariableExpr struct {
 	name iqlSchema.Token
 }
 
-func NewVariable(name iqlSchema.Token) *Variable {
-	return &Variable{
+func NewVariable(name iqlSchema.Token) *VariableExpr {
+	return &VariableExpr{
 		name: name,
 	}
 }
 
-func (expr *Variable) Accept(visitor ExprVisitor) interface{} {
+func (expr *VariableExpr) Accept(visitor ExprVisitor) interface{} {
 	//return visitor.VisitBlockStmt(stmt)
 	return visitor.VisitVariableExpr(expr)
 }

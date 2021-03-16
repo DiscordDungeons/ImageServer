@@ -10,6 +10,6 @@ func NewLiteralExpr(val interface{}) *LiteralExpr {
 	}
 }
 
-func (litExpr *LiteralExpr) Accept(visitor StmtVisitor) interface{} {
-	return nil
+func (litExpr *LiteralExpr) Accept(visitor ExprVisitor) interface{} {
+	return visitor.VisitLiteralExpr(litExpr)
 }
