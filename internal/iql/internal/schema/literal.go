@@ -21,6 +21,7 @@ func (ltype LiteralType) String() string {
 }
 
 type literalList struct {
+	NO_TYPE         LiteralType
 	STRING_LITERAL  LiteralType
 	INT_LITERAL     LiteralType
 	FLOAT32_LITERAL LiteralType
@@ -28,32 +29,33 @@ type literalList struct {
 }
 
 var LiteralTypes = &literalList{
-	STRING_LITERAL:  0,
-	INT_LITERAL:     1,
-	FLOAT32_LITERAL: 2,
-	FLOAT64_LITERAL: 3,
+	NO_TYPE:         0,
+	STRING_LITERAL:  1,
+	INT_LITERAL:     2,
+	FLOAT32_LITERAL: 3,
+	FLOAT64_LITERAL: 4,
 }
 
 type Literal struct {
-	lType LiteralType
+	LType LiteralType
 
-	strVal     string
-	intVal     int
-	float32Val float32
-	float64Val float64
+	StrVal     string
+	IntVal     int
+	Float32Val float32
+	Float64Val float64
 }
 
 func (literal Literal) String() string {
-	switch literal.lType {
+	switch literal.LType {
 	case LiteralTypes.STRING_LITERAL:
-		return fmt.Sprintf("%s %s", literal.lType, literal.strVal)
+		return fmt.Sprintf("%s %s", literal.LType, literal.StrVal)
 	case LiteralTypes.INT_LITERAL:
-		return fmt.Sprintf("%s %d", literal.lType, literal.intVal)
+		return fmt.Sprintf("%s %d", literal.LType, literal.IntVal)
 	case LiteralTypes.FLOAT32_LITERAL:
-		return fmt.Sprintf("%s %f", literal.lType, literal.float32Val)
+		return fmt.Sprintf("%s %f", literal.LType, literal.Float32Val)
 	case LiteralTypes.FLOAT64_LITERAL:
-		return fmt.Sprintf("%s %f", literal.lType, literal.float64Val)
+		return fmt.Sprintf("%s %f", literal.LType, literal.Float64Val)
 	}
 
-	return fmt.Sprintf("%s %s", literal.lType, "no value")
+	return fmt.Sprintf("%s %s", literal.LType, "no value")
 }

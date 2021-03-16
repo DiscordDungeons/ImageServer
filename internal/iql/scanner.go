@@ -2,7 +2,6 @@ package iql
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 
 	iqlSchema "discorddungeons.me/imageserver/iql/schema"
@@ -48,7 +47,7 @@ func (scanner *Scanner) Advance() rune {
 func (scanner *Scanner) AddToken(tokenType iqlSchema.TokenType, literal iqlSchema.Literal) {
 	text := scanner.source[scanner.start:scanner.current]
 
-	scanner.tokens = append(scanner.tokens, iqlSchema.Token{tokenType: tokenType, lexeme: text, literal: literal, line: scanner.line})
+	scanner.tokens = append(scanner.tokens, iqlSchema.Token{TokenType: tokenType, Lexeme: text, Literal: literal, Line: scanner.line})
 }
 
 func (scanner *Scanner) Match(expected rune) bool {
@@ -93,7 +92,7 @@ func (scanner *Scanner) String() error {
 	// Trim surrounding quotes
 	value := string([]rune(scanner.source)[scanner.start+1 : scanner.current-1])
 
-	newLiteral := iqlSchema.Literal{strVal: value, lType: iqlSchema.LiteralTypes.STRING_LITERAL}
+	newLiteral := iqlSchema.Literal{StrVal: value, LType: iqlSchema.LiteralTypes.STRING_LITERAL}
 
 	scanner.AddToken(iqlSchema.TokenTypes.STRING, newLiteral)
 
@@ -146,7 +145,7 @@ func (scanner *Scanner) Number() error {
 		return errors.New("invalid float")
 	}
 
-	newLiteral := iqlSchema.Literal{float64Val: f, lType: iqlSchema.LiteralTypes.FLOAT64_LITERAL}
+	newLiteral := iqlSchema.Literal{Float64Val: f, LType: iqlSchema.LiteralTypes.FLOAT64_LITERAL}
 
 	scanner.AddToken(iqlSchema.TokenTypes.NUMBER, newLiteral)
 
@@ -168,17 +167,9 @@ func (scanner *Scanner) Identifier() {
 		scanner.Advance()
 	}
 
-	println("scanner.source: " + scanner.source)
-
 	text := scanner.source[scanner.start:scanner.current]
 
-	fmt.Println(fmt.Printf("Text is %s | string: %s", text, string(text)))
-
-	fmt.Println("Keywords ", scanner.keywords)
-
 	tokenType, ok := scanner.keywords[text]
-
-	fmt.Printf("tokenType: %d OK: %t\n", tokenType, ok)
 
 	if !ok {
 		tokenType = iqlSchema.TokenTypes.IDENTIFIER
@@ -189,8 +180,6 @@ func (scanner *Scanner) Identifier() {
 
 func (scanner *Scanner) ScanToken() error {
 	c := scanner.Advance()
-
-	fmt.Println("C: " + string(c))
 
 	switch c {
 	case '(':
@@ -264,10 +253,10 @@ func (scanner *Scanner) ScanTokens() []iqlSchema.Token {
 	}
 
 	scanner.tokens = append(scanner.tokens, iqlSchema.Token{
-		tokenType: iqlSchema.TokenTypes.EOF,
-		lexeme:    "",
-		literal:   iqlSchema.Literal{},
-		line:      scanner.line,
+		TokenType: iqlSchema.TokenTypes.EOF,
+		Lexeme:    "",
+		Literal:   iqlSchema.Literal{},
+		Line:      scanner.line,
 	})
 
 	return scanner.tokens

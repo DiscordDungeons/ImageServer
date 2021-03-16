@@ -15,5 +15,5 @@ func NewVarStmt(name iqlSchema.Token, initializer Expr) *VarStmt {
 }
 
 func (varStmt *VarStmt) Accept(visitor StmtVisitor) interface{} {
-	return visitor.VisitVarStmt(*varStmt)
+	return visitor.VisitVarStmt(varStmt)
 }

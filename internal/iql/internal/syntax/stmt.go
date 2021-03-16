@@ -11,6 +11,7 @@ type StmtVisitor interface {
 	//VisitIfStmt(stmt If) interface{}
 	//VisitPrintStmt(stmt Print) interface{}
 	//VisitReturnStmt(stmt Return) interface{}
-	VisitVarStmt(stmt VarStmt) interface{}
+	VisitVarStmt(stmt *VarStmt) interface{}
+	VisitLoadStmt(stmt *LoadStmt) interface{}
 	//VisitWhileStmt(stmt While) interface{}
 }

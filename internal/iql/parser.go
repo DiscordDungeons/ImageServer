@@ -2,6 +2,7 @@ package iql
 
 import (
 	"errors"
+	"fmt"
 
 	iqlSchema "discorddungeons.me/imageserver/iql/schema"
 	iqlSyntax "discorddungeons.me/imageserver/iql/syntax"
@@ -20,9 +21,13 @@ func NewParser(tokens []iqlSchema.Token) *Parser {
 }
 
 func (parser *Parser) Parse() []iqlSyntax.Stmt {
-	statements := []iql.Stmt{}
+	fmt.Println("Start parse")
+
+	statements := []iqlSyntax.Stmt{}
 
 	for !parser.isAtEnd() {
+		fmt.Println("Not at end")
+
 		statement := parser.declaration()
 
 		if statement != nil {
@@ -30,14 +35,20 @@ func (parser *Parser) Parse() []iqlSyntax.Stmt {
 		}
 	}
 
+	fmt.Println("Return statements")
+
 	return statements
 }
 
-func (parser *Parser) expression() Expr {
+func (parser *Parser) expression() iqlSyntax.Expr {
 	return parser.assignment()
 }
 
-func (parser *Parser) declaration() iql.Stmt {
+func (parser *Parser) assignment() iqlSyntax.Expr {
+	return iqlSyntax.NewVariable(iqlSchema.Token{TokenType: iqlSchema.TokenTypes.LOAD})
+}
+
+func (parser *Parser) declaration() iqlSyntax.Stmt {
 	// if parser.Match(TokenTypes.FN) {
 	// 	return parser.Func("function")
 	// }
@@ -45,38 +56,37 @@ func (parser *Parser) declaration() iql.Stmt {
 	return parser.statement()
 }
 
-func (parser *Parser) statement() iql.Stmt {
-	// if parser.Match(TokenTypes.FOR) {
-	// 	return parser.ForStatement()
-	// }
-	// if parser.Match(TokenTypes.IF) {
-	// 	return parser.IfStatement()
-	// }
-	// if parser.Match(TokenTypes.PRINT) {
-	// 	return parser.PrintStatement()
-	// }
-	// if parser.Match(TokenTypes.RETURN) {
-	// 	return parser.ReturnStatement()
-	// }
-	// if parser.Match(TokenTypes.WHILE) {
-	// 	return parser.WhileStatement()
-	// }
-	// if parser.Match(TokenTypes.LEFT_BRACE) {
-	// 	return iql.Block(parser.block())
-	// }
-
-	//return parser.ExpressionStatement()
+func (parser *Parser) statement() iqlSyntax.Stmt {
+	if parser.match(iqlSchema.TokenTypes.LOAD) {
+		return parser.loadStatement()
+	}
 
 	return parser.expressionStatement()
 }
 
-func (parser *Parser) expressionStatement() iql.Stmt {
-	expr := parser.expression()
+func (parser *Parser) loadStatement() iqlSyntax.Stmt {
+	//value := parser.expression()
 
-	return NewExpression(expr)
+	parser.consume(iqlSchema.TokenTypes.IMAGE, "expect image")
+	parser.consume(iqlSchema.TokenTypes.FROM, "expect from")
+	parser.consume(iqlSchema.TokenTypes.URL, "expect url")
+
+	imageUrl := parser.advance()
+
+	parser.consume(iqlSchema.TokenTypes.AS, "expect as")
+
+	imageName := parser.advance()
+
+	return iqlSyntax.NewLoadStmt(imageUrl.Literal.StrVal, imageName.Literal.StrVal)
 }
 
-func (parser *Parser) match(types ...TokenType) bool {
+func (parser *Parser) expressionStatement() iqlSyntax.Stmt {
+	expr := parser.expression()
+
+	return iqlSyntax.NewExpressionStmt(expr)
+}
+
+func (parser *Parser) match(types ...iqlSchema.TokenType) bool {
 	for _, t := range types {
 		if parser.check(t) {
 			parser.advance()
@@ -87,23 +97,23 @@ func (parser *Parser) match(types ...TokenType) bool {
 	return false
 }
 
-func (parser *Parser) consume(tokenType TokenType, message string) (Token, error) {
+func (parser *Parser) consume(tokenType iqlSchema.TokenType, message string) (iqlSchema.Token, error) {
 	if parser.check(tokenType) {
 		return parser.advance(), nil
 	}
 
-	return Token{}, errors.New(message)
+	return iqlSchema.Token{}, errors.New(message)
 }
 
-func (parser *Parser) check(t TokenType) bool {
+func (parser *Parser) check(t iqlSchema.TokenType) bool {
 	if parser.isAtEnd() {
 		return false
 	}
 
-	return parser.peek().tokenType == t
+	return parser.peek().TokenType == t
 }
 
-func (parser *Parser) advance() Token {
+func (parser *Parser) advance() iqlSchema.Token {
 	if !parser.isAtEnd() {
 		parser.current++
 	}
@@ -112,33 +122,36 @@ func (parser *Parser) advance() Token {
 }
 
 func (parser *Parser) isAtEnd() bool {
-	return parser.peek().tokenType == TokenTypes.EOF
+	token := parser.peek()
+	fmt.Printf("Token: %s\n", token)
+
+	return token.TokenType == iqlSchema.TokenTypes.EOF
 
 }
 
-func (parser *Parser) peek() Token {
+func (parser *Parser) peek() iqlSchema.Token {
 	return parser.tokens[parser.current]
 }
 
-func (parser *Parser) previous() Token {
+func (parser *Parser) previous() iqlSchema.Token {
 	return parser.tokens[parser.current-1]
 }
 
-func (parser *Parser) primary() (iql.Expr, error) {
-	if parser.match(TokenTypes.NUMBER, TokenTypes.STRING) {
-		return iql.NewLiteralExpr(parser.previous().literal), nil
+func (parser *Parser) primary() (iqlSyntax.Expr, error) {
+	if parser.match(iqlSchema.TokenTypes.NUMBER, iqlSchema.TokenTypes.STRING) {
+		return iqlSyntax.NewLiteralExpr(parser.previous().Literal), nil
 	}
 
-	if parser.match(TokenTypes.IDENTIFIER) {
-		return iql.Variable(parser.previous())
+	if parser.match(iqlSchema.TokenTypes.IDENTIFIER) {
+		return iqlSyntax.NewVariable(parser.previous()), nil
 	}
 
-	if parser.match(TokenTypes.LEFT_PAREN) {
-		expr := parser.expression()
-		parser.consume(TokenTypes.RIGHT_PAREN, `Expect ')' after expression.`)
+	// if parser.match(iqlSchema.TokenTypes.LEFT_PAREN) {
+	// 	expr := parser.expression()
+	// 	parser.consume(iqlSchema.TokenTypes.RIGHT_PAREN, `Expect ')' after expression.`)
 
-		return iql.Grouping(expr)
-	}
+	// 	return iqlSyntax.Grouping(expr), nil
+	// }
 
 	return nil, errors.New("expected expression")
 }

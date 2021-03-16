@@ -1,7 +1,7 @@
 package iqlSyntax
 
 type Expr interface {
-	Accept(visitor ExprVisitor)
+	Accept(visitor ExprVisitor) interface{}
 }
 
 type ExprVisitor interface {

@@ -3,12 +3,12 @@ package iqlSchema
 import "fmt"
 
 type Token struct {
-	tokenType TokenType
-	lexeme    string
-	literal   Literal
-	line      int
+	TokenType TokenType
+	Lexeme    string
+	Literal   Literal
+	Line      int
 }
 
 func (token Token) String() string {
-	return fmt.Sprintf("[%d] %s %s", token.tokenType, token.lexeme, token.literal)
+	return fmt.Sprintf("[%d] %s %s", token.TokenType, token.Lexeme, token.Literal)
 }

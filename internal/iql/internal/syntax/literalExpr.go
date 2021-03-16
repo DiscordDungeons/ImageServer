@@ -1,12 +1,12 @@
 package iqlSyntax
 
 type LiteralExpr struct {
-	value interface{}
+	Value interface{}
 }
 
 func NewLiteralExpr(val interface{}) *LiteralExpr {
 	return &LiteralExpr{
-		value: val,
+		Value: val,
 	}
 }
 

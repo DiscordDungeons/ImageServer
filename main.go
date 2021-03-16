@@ -39,12 +39,18 @@ func main() {
 
 	tokens := iqlScanner.ScanTokens()
 
+	for _, token := range tokens {
+		fmt.Println(token)
+	}
+
 	parser := iql.NewParser(tokens)
 
 	statements := parser.Parse()
 
+	//astPrinter := iql.NewASTPrinter()
+
 	for _, statement := range statements {
-		fmt.Println(statement)
+		fmt.Printf("Statement: %s\n", statement)
 	}
 
 	// if err := scanner.Err(); err != nil {
