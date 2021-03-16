@@ -1,19 +1,65 @@
 package main
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
+	"image/png"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"discorddungeons.me/imageserver/iql"
 	"github.com/joho/godotenv"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
+func statusHandler(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "OK")
+}
+
+func handler(w http.ResponseWriter, req *http.Request) {
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		log.Printf("Error reading body: %v", err)
+		http.Error(w, "can't read body", http.StatusBadRequest)
+		return
+	}
+
+	runner := iql.NewIQLRunner()
+
+	res, err := runner.RunIQL(string(body))
+
+	if err != nil {
+		http.Error(w, err.Error(), 400)
+	}
+
+	i := 0
+
+	for _, img := range res {
+		if i > 0 {
+			continue
+		}
+
+		buf := new(bytes.Buffer)
+
+		err := png.Encode(buf, img)
+
+		if err != nil {
+			http.Error(w, "can't return image", http.StatusBadRequest)
+			return
+		}
+
+		data := buf.Bytes()
+
+		w.Header().Set("Content-Type", "image/png")
+
+		w.Write(data)
+
+		i++
+	}
 }
 
 func main() {
@@ -28,86 +74,34 @@ func main() {
 		serverPort = fmt.Sprintf(":%s", serverPort)
 	}
 
-	scanner := bufio.NewScanner(os.Stdin)
-	code := ""
+	http.HandleFunc("/", handler)
+	http.HandleFunc("/status", statusHandler)
 
-	for scanner.Scan() {
-		code += scanner.Text()
-	}
+	go func() {
+		for {
+			time.Sleep(time.Second)
 
-	iqlScanner := iql.NewScanner(code)
+			log.Println("[ImageServer] Checking if server's started")
 
-	tokens := iqlScanner.ScanTokens()
+			resp, err := http.Get(fmt.Sprintf("http://localhost%s/status", serverPort))
 
-	for _, token := range tokens {
-		fmt.Println(token)
-	}
+			if err != nil {
+				log.Println("Failed:", err)
+				continue
+			}
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				log.Println("Not OK:", resp.StatusCode)
+				continue
+			}
 
-	parser := iql.NewParser(tokens)
+			// Reached this point: server is up and running.
+			break
+		}
 
-	statements := parser.Parse()
+		log.Printf("[ImageServer] Listening on port %s", serverPort)
+	}()
 
-	//astPrinter := iql.NewASTPrinter()
-
-	for _, statement := range statements {
-		fmt.Printf("Statement: %s\n", statement)
-	}
-
-	// if err := scanner.Err(); err != nil {
-	// 	log.Println(err)
-	// }
-
-	// lexer := iql.
-
-	// v := lexer.Lex(iql.yySymType)
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// } else {
-	// 	fmt.Println(v)
-	// }
-
-	// lexer := iql.NewLexer(os.Stdin)
-
-	// iql.yyParse(lexer)
-
-	//yyParse(NewLexer(os.Stdin))
-
-	// v, err := iql.Parse([]byte("LOAD IMAGE FROM URL https://res.discorddungeons.me/images/achievements/killimanjaro/1.png AS ach_image;"))
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// } else {
-	// 	fmt.Println(v)
-	// }
-
-	// http.HandleFunc("/", handler)
-
-	// go func() {
-	// 	for {
-	// 		time.Sleep(time.Second)
-
-	// 		log.Println("[ImageServer] Checking if server's started")
-
-	// 		resp, err := http.Get(fmt.Sprintf("http://localhost%s", serverPort))
-
-	// 		if err != nil {
-	// 			log.Println("Failed:", err)
-	// 			continue
-	// 		}
-	// 		resp.Body.Close()
-	// 		if resp.StatusCode != http.StatusOK {
-	// 			log.Println("Not OK:", resp.StatusCode)
-	// 			continue
-	// 		}
-
-	// 		// Reached this point: server is up and running.
-	// 		break
-	// 	}
-
-	// 	log.Printf("[ImageServer] Listening on port %s", serverPort)
-	// }()
-
-	// log.Println("[ImageServer] Starting server...")
-	// log.Fatal(http.ListenAndServe(serverPort, nil))
+	log.Println("[ImageServer] Starting server...")
+	log.Fatal(http.ListenAndServe(serverPort, nil))
 }

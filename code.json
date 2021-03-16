@@ -1,0 +1,30 @@
+{
+	"Init": {
+		"Actions": [
+			{
+				"ActionType": "LOAD_IMAGE",
+				"Url": "https://res.discorddungeons.me/images/achievements/killimanjaro/1.png",
+				"ImageName": "image1"
+			}
+		]
+	},
+	"Generate": {
+		"Actions": [
+			{
+				"ActionType": "MODIFY_IMAGE",
+				"ImageName": "image1",
+				"Properties": {
+					"Grayscale": 1
+				}
+			}
+		]
+	},
+	"Return": {
+		"Actions": [
+			{
+				"ActionType": "RETURN_IMAGE",
+				"ImageName": "image1"
+			}
+		]
+	}
+}
