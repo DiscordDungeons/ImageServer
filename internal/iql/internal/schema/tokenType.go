@@ -1,4 +1,4 @@
-package iql
+package iqlSchema
 
 type TokenType = int
 
@@ -80,7 +80,7 @@ var TokenTypes = &tokenList{
 
 	BANG:       12,
 	BANG_EQUAL: 13,
-	
+
 	EQUAL:       14,
 	EQUAL_EQUAL: 15,
 

@@ -1,4 +1,4 @@
-package iql
+package iqlSchema
 
 import "fmt"
 

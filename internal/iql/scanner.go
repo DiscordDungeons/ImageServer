@@ -4,31 +4,33 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	iqlSchema "discorddungeons.me/imageserver/iql/schema"
 )
 
 type Scanner struct {
 	source  string
-	tokens  []Token
+	tokens  []iqlSchema.Token
 	start   int
 	current int
 	line    int
 
-	keywords map[string]TokenType
+	keywords map[string]iqlSchema.TokenType
 }
 
 func NewScanner(source string) *Scanner {
 	return &Scanner{
 		source: source,
-		keywords: map[string]TokenType{
-			"LOAD":      TokenTypes.LOAD,
-			"IMAGE":     TokenTypes.IMAGE,
-			"FROM":      TokenTypes.FROM,
-			"URL":       TokenTypes.URL,
-			"AS":        TokenTypes.AS,
-			"GENERATE":  TokenTypes.GENERATE,
-			"WITH":      TokenTypes.WITH,
-			"SET":       TokenTypes.SET,
-			"GRAYSCALE": TokenTypes.GRAYSCALE,
+		keywords: map[string]iqlSchema.TokenType{
+			"LOAD":      iqlSchema.TokenTypes.LOAD,
+			"IMAGE":     iqlSchema.TokenTypes.IMAGE,
+			"FROM":      iqlSchema.TokenTypes.FROM,
+			"URL":       iqlSchema.TokenTypes.URL,
+			"AS":        iqlSchema.TokenTypes.AS,
+			"GENERATE":  iqlSchema.TokenTypes.GENERATE,
+			"WITH":      iqlSchema.TokenTypes.WITH,
+			"SET":       iqlSchema.TokenTypes.SET,
+			"GRAYSCALE": iqlSchema.TokenTypes.GRAYSCALE,
 		},
 	}
 }
@@ -43,10 +45,10 @@ func (scanner *Scanner) Advance() rune {
 	return []rune(scanner.source)[scanner.current-1]
 }
 
-func (scanner *Scanner) AddToken(tokenType TokenType, literal Literal) {
+func (scanner *Scanner) AddToken(tokenType iqlSchema.TokenType, literal iqlSchema.Literal) {
 	text := scanner.source[scanner.start:scanner.current]
 
-	scanner.tokens = append(scanner.tokens, Token{tokenType: tokenType, lexeme: text, literal: literal, line: scanner.line})
+	scanner.tokens = append(scanner.tokens, iqlSchema.Token{tokenType: tokenType, lexeme: text, literal: literal, line: scanner.line})
 }
 
 func (scanner *Scanner) Match(expected rune) bool {
@@ -91,9 +93,9 @@ func (scanner *Scanner) String() error {
 	// Trim surrounding quotes
 	value := string([]rune(scanner.source)[scanner.start+1 : scanner.current-1])
 
-	newLiteral := Literal{strVal: value, lType: LiteralTypes.STRING_LITERAL}
+	newLiteral := iqlSchema.Literal{strVal: value, lType: iqlSchema.LiteralTypes.STRING_LITERAL}
 
-	scanner.AddToken(TokenTypes.STRING, newLiteral)
+	scanner.AddToken(iqlSchema.TokenTypes.STRING, newLiteral)
 
 	return nil
 }
@@ -144,9 +146,9 @@ func (scanner *Scanner) Number() error {
 		return errors.New("invalid float")
 	}
 
-	newLiteral := Literal{float64Val: f, lType: LiteralTypes.FLOAT64_LITERAL}
+	newLiteral := iqlSchema.Literal{float64Val: f, lType: iqlSchema.LiteralTypes.FLOAT64_LITERAL}
 
-	scanner.AddToken(TokenTypes.NUMBER, newLiteral)
+	scanner.AddToken(iqlSchema.TokenTypes.NUMBER, newLiteral)
 
 	return nil
 }
@@ -179,10 +181,10 @@ func (scanner *Scanner) Identifier() {
 	fmt.Printf("tokenType: %d OK: %t\n", tokenType, ok)
 
 	if !ok {
-		tokenType = TokenTypes.IDENTIFIER
+		tokenType = iqlSchema.TokenTypes.IDENTIFIER
 	}
 
-	scanner.AddToken(tokenType, Literal{})
+	scanner.AddToken(tokenType, iqlSchema.Literal{})
 }
 
 func (scanner *Scanner) ScanToken() error {
@@ -192,35 +194,35 @@ func (scanner *Scanner) ScanToken() error {
 
 	switch c {
 	case '(':
-		scanner.AddToken(TokenTypes.LEFT_PAREN, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.LEFT_PAREN, iqlSchema.Literal{})
 	case ')':
-		scanner.AddToken(TokenTypes.RIGHT_PAREN, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.RIGHT_PAREN, iqlSchema.Literal{})
 	case '{':
-		scanner.AddToken(TokenTypes.LEFT_BRACE, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.LEFT_BRACE, iqlSchema.Literal{})
 	case '}':
-		scanner.AddToken(TokenTypes.RIGHT_BRACE, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.RIGHT_BRACE, iqlSchema.Literal{})
 	case ',':
-		scanner.AddToken(TokenTypes.COMMA, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.COMMA, iqlSchema.Literal{})
 	case '.':
-		scanner.AddToken(TokenTypes.DOT, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.DOT, iqlSchema.Literal{})
 	case '-':
-		scanner.AddToken(TokenTypes.MINUS, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.MINUS, iqlSchema.Literal{})
 	case '+':
-		scanner.AddToken(TokenTypes.PLUS, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.PLUS, iqlSchema.Literal{})
 	case ';':
-		scanner.AddToken(TokenTypes.SEMICOLON, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.SEMICOLON, iqlSchema.Literal{})
 	case '*':
-		scanner.AddToken(TokenTypes.STAR, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.STAR, iqlSchema.Literal{})
 	case '$':
-		scanner.AddToken(TokenTypes.DOLLAR, Literal{})
+		scanner.AddToken(iqlSchema.TokenTypes.DOLLAR, iqlSchema.Literal{})
 	case '!':
-		scanner.AddToken((map[bool]TokenType{true: TokenTypes.BANG_EQUAL, false: TokenTypes.BANG})[scanner.Match('=')], Literal{})
+		scanner.AddToken((map[bool]iqlSchema.TokenType{true: iqlSchema.TokenTypes.BANG_EQUAL, false: iqlSchema.TokenTypes.BANG})[scanner.Match('=')], iqlSchema.Literal{})
 	case '=':
-		scanner.AddToken((map[bool]TokenType{true: TokenTypes.EQUAL_EQUAL, false: TokenTypes.EQUAL})[scanner.Match('=')], Literal{})
+		scanner.AddToken((map[bool]iqlSchema.TokenType{true: iqlSchema.TokenTypes.EQUAL_EQUAL, false: iqlSchema.TokenTypes.EQUAL})[scanner.Match('=')], iqlSchema.Literal{})
 	case '<':
-		scanner.AddToken((map[bool]TokenType{true: TokenTypes.LESS_EQUAL, false: TokenTypes.LESS})[scanner.Match('=')], Literal{})
+		scanner.AddToken((map[bool]iqlSchema.TokenType{true: iqlSchema.TokenTypes.LESS_EQUAL, false: iqlSchema.TokenTypes.LESS})[scanner.Match('=')], iqlSchema.Literal{})
 	case '>':
-		scanner.AddToken((map[bool]TokenType{true: TokenTypes.GREATER_EQUAL, false: TokenTypes.GREATER})[scanner.Match('=')], Literal{})
+		scanner.AddToken((map[bool]iqlSchema.TokenType{true: iqlSchema.TokenTypes.GREATER_EQUAL, false: iqlSchema.TokenTypes.GREATER})[scanner.Match('=')], iqlSchema.Literal{})
 	case '/':
 		if scanner.Match('/') {
 			// A comment goes until the end of the line.
@@ -228,7 +230,7 @@ func (scanner *Scanner) ScanToken() error {
 				scanner.Advance()
 			}
 		} else {
-			scanner.AddToken(TokenTypes.SLASH, Literal{})
+			scanner.AddToken(iqlSchema.TokenTypes.SLASH, iqlSchema.Literal{})
 		}
 
 	case ' ':
@@ -255,16 +257,16 @@ func (scanner *Scanner) ScanToken() error {
 	return nil
 }
 
-func (scanner *Scanner) ScanTokens() []Token {
+func (scanner *Scanner) ScanTokens() []iqlSchema.Token {
 	for !scanner.IsAtEnd() {
 		scanner.start = scanner.current
 		scanner.ScanToken()
 	}
 
-	scanner.tokens = append(scanner.tokens, Token{
-		tokenType: TokenTypes.EOF,
+	scanner.tokens = append(scanner.tokens, iqlSchema.Token{
+		tokenType: iqlSchema.TokenTypes.EOF,
 		lexeme:    "",
-		literal:   Literal{},
+		literal:   iqlSchema.Literal{},
 		line:      scanner.line,
 	})
 
