@@ -33,6 +33,7 @@ func GetModificationHandler() *modificationHandler {
 		}
 
 		modificationHandlerInstance.RegisterProperty("Grayscale", HandleGrayscale)
+		modificationHandlerInstance.RegisterProperty("Invert", HandleInvert)
 	})
 
 	return modificationHandlerInstance
