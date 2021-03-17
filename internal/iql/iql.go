@@ -5,21 +5,25 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/color"
+
+	"discorddungeons.me/imageserver/iql/iqlTypes"
+	"discorddungeons.me/imageserver/iql/modifyProperty"
 )
 
 type IQLRunner struct {
-	tree IQLTree
+	tree iqlTypes.IQLTree
 
 	loadedImages map[string]image.Image
 }
 
+// NewIQLRunner creates a new IQLRunner
 func NewIQLRunner() *IQLRunner {
 	return &IQLRunner{
 		loadedImages: make(map[string]image.Image),
 	}
 }
 
+// RunIQL runs the provided code, and returns a map of images by name, or an error
 func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 	err := json.Unmarshal([]byte(code), &runner.tree)
 
@@ -29,7 +33,7 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 	for _, action := range runner.tree.Init.Actions {
 		switch action.ActionType {
-		case ActionTypes.LOAD_IMAGE:
+		case iqlTypes.ActionTypes.LOAD_IMAGE:
 			if action.Url == "" {
 				return nil, errors.New("no url provided for image")
 			}
@@ -51,7 +55,7 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 	for _, action := range runner.tree.Generate.Actions {
 		switch action.ActionType {
-		case ActionTypes.MODIFY_IMAGE:
+		case iqlTypes.ActionTypes.MODIFY_IMAGE:
 			if action.ImageName == "" {
 				return nil, errors.New("no image name provided for action")
 			}
@@ -62,33 +66,27 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 			loadedImage := runner.loadedImages[action.ImageName]
 
-			for property, _ := range action.Properties {
-				fmt.Printf("property: %s\n", property)
+			modifiedImage, err := modifyProperty.GetModificationHandler().HandleModification(loadedImage, action)
 
-				switch property {
-				case ModifyProperties.GRAYSCALE:
-					fmt.Println("GRAYSCALE!")
-					grayImage := image.NewGray(loadedImage.Bounds())
-
-					bounds := loadedImage.Bounds()
-
-					w, h := bounds.Max.X, bounds.Max.Y
-
-					for x := 0; x < w; x++ {
-						for y := 0; y < h; y++ {
-							oldColor := loadedImage.At(x, y)
-							grayColor := color.GrayModel.Convert(oldColor)
-
-							grayImage.Set(x, y, grayColor)
-						}
-					}
-
-					runner.loadedImages[action.ImageName] = nil
-
-					runner.loadedImages[action.ImageName] = grayImage
-				}
-
+			if err != nil {
+				return nil, err
 			}
+
+			runner.loadedImages[action.ImageName] = nil
+			runner.loadedImages[action.ImageName] = modifiedImage
+
+			// for property, _ := range action.Properties {
+			// 	fmt.Printf("property: %s\n", property)
+
+			// 	switch property {
+			// 	case modifyProperty.ModifyProperties.GRAYSCALE:
+
+			// 		runner.loadedImages[action.ImageName] = nil
+
+			// 		runner.loadedImages[action.ImageName] = grayImage
+			// 	}
+
+			// }
 		}
 		fmt.Println(action)
 	}
@@ -97,7 +95,7 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 	for _, action := range runner.tree.Return.Actions {
 		switch action.ActionType {
-		case ActionTypes.RETURN_IMAGE:
+		case iqlTypes.ActionTypes.RETURN_IMAGE:
 			if runner.loadedImages[action.ImageName] == nil {
 				return nil, fmt.Errorf("error returning image %s: it's not loaded", action.ImageName)
 			}

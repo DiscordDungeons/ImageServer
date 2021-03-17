@@ -1,6 +1,6 @@
-package iql
+package iqlTypes
 
-type iqlAction struct {
+type IQLAction struct {
 	ActionType ActionType
 	Url        string
 	ImageName  string
@@ -8,15 +8,15 @@ type iqlAction struct {
 }
 
 type initTree struct {
-	Actions []iqlAction
+	Actions []IQLAction
 }
 
 type generateTree struct {
-	Actions []iqlAction
+	Actions []IQLAction
 }
 
 type returnTree struct {
-	Actions []iqlAction
+	Actions []IQLAction
 }
 
 type IQLTree struct {

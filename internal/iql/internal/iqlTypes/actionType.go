@@ -1,4 +1,4 @@
-package iql
+package iqlTypes
 
 type ActionType = string
 
