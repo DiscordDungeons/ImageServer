@@ -19,7 +19,7 @@ var ModifyProperties = &modifyProperty{
 }
 
 type modificationHandler struct {
-	registeredProperties map[string]func(loadedImage image.Image) (image.Image, error)
+	registeredProperties map[string]func(loadedImage image.Image, propertyValue interface{}) (image.Image, error)
 }
 
 var modificationHandlerInstance *modificationHandler
@@ -29,7 +29,7 @@ var once sync.Once
 func GetModificationHandler() *modificationHandler {
 	once.Do(func() {
 		modificationHandlerInstance = &modificationHandler{
-			registeredProperties: make(map[string]func(loadedImage image.Image) (image.Image, error)),
+			registeredProperties: make(map[string]func(loadedImage image.Image, propertyValue interface{}) (image.Image, error)),
 		}
 
 		modificationHandlerInstance.RegisterProperty("Grayscale", HandleGrayscale)
@@ -38,19 +38,23 @@ func GetModificationHandler() *modificationHandler {
 	return modificationHandlerInstance
 }
 
-func (handler *modificationHandler) RegisterProperty(property string, action func(loadedImage image.Image) (image.Image, error)) {
+// Registers the given property to be handled using the given action function
+func (handler *modificationHandler) RegisterProperty(property string, action func(loadedImage image.Image, propertyValue interface{}) (image.Image, error)) {
 	handler.registeredProperties[property] = action
 }
 
+// Handles modification
 func (handler *modificationHandler) HandleModification(modImage image.Image, action iqlTypes.IQLAction) (image.Image, error) {
 	modifiedImage := modImage
 
-	for property, _ := range action.Properties {
+	for property, value := range action.Properties {
 		if handler.registeredProperties[property] == nil {
 			return nil, fmt.Errorf("error modifying image %s: the property %s isn't registered", action.ImageName, property)
 		}
 
-		newImage, err := handler.registeredProperties[property](modifiedImage)
+		fmt.Println(value)
+
+		newImage, err := handler.registeredProperties[property](modifiedImage, value)
 
 		if err != nil {
 			return nil, err

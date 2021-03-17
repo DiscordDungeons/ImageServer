@@ -74,19 +74,6 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 			runner.loadedImages[action.ImageName] = nil
 			runner.loadedImages[action.ImageName] = modifiedImage
-
-			// for property, _ := range action.Properties {
-			// 	fmt.Printf("property: %s\n", property)
-
-			// 	switch property {
-			// 	case modifyProperty.ModifyProperties.GRAYSCALE:
-
-			// 		runner.loadedImages[action.ImageName] = nil
-
-			// 		runner.loadedImages[action.ImageName] = grayImage
-			// 	}
-
-			// }
 		}
 		fmt.Println(action)
 	}
