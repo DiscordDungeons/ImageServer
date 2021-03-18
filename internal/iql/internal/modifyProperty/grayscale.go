@@ -7,7 +7,7 @@ import (
 )
 
 // Converts the given loadedImage to grayscale
-func HandleGrayscale(loadedImage image.Image, propertyValue interface{}) (image.Image, error) {
+func HandleGrayscale(loadedImage image.Image, propertyValue interface{}, loadedImages map[string]image.Image) (image.Image, error) {
 	switch t := propertyValue.(type) {
 	case map[string]interface{}:
 		// We've got a json object
@@ -21,7 +21,7 @@ func HandleGrayscale(loadedImage image.Image, propertyValue interface{}) (image.
 			}
 
 			if includeTransparency {
-				return HandleTransparentGrayscale(loadedImage, propertyValue)
+				return HandleTransparentGrayscale(loadedImage, propertyValue, loadedImages)
 			}
 		}
 
@@ -29,7 +29,7 @@ func HandleGrayscale(loadedImage image.Image, propertyValue interface{}) (image.
 		// Grayscale set to a bool
 		isTransparent := propertyValue.(bool)
 		if isTransparent {
-			return HandleTransparentGrayscale(loadedImage, propertyValue)
+			return HandleTransparentGrayscale(loadedImage, propertyValue, loadedImages)
 		}
 	default:
 		return nil, fmt.Errorf("error applying property %s. value of type %T is invalid", "Grayscale", t)
@@ -54,7 +54,7 @@ func HandleGrayscale(loadedImage image.Image, propertyValue interface{}) (image.
 }
 
 // Converts the given loadedImage to grayscale, while keeping transparency
-func HandleTransparentGrayscale(loadedImage image.Image, propertyValue interface{}) (image.Image, error) {
+func HandleTransparentGrayscale(loadedImage image.Image, propertyValue interface{}, loadedImages map[string]image.Image) (image.Image, error) {
 	grayImage := image.NewRGBA(loadedImage.Bounds())
 
 	bounds := loadedImage.Bounds()

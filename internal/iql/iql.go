@@ -66,7 +66,7 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 			loadedImage := runner.loadedImages[action.ImageName]
 
-			modifiedImage, err := modifyProperty.GetModificationHandler().HandleModification(loadedImage, action)
+			modifiedImage, err := modifyProperty.GetModificationHandler().HandleModification(loadedImage, action, runner.loadedImages)
 
 			if err != nil {
 				return nil, err

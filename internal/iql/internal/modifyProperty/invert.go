@@ -7,7 +7,7 @@ import (
 )
 
 // Inverts the given loadedImage
-func HandleInvert(loadedImage image.Image, propertyValue interface{}) (image.Image, error) {
+func HandleInvert(loadedImage image.Image, propertyValue interface{}, loadedImages map[string]image.Image) (image.Image, error) {
 
 	inverted := effect.Invert(loadedImage)
 

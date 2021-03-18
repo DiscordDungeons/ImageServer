@@ -19,7 +19,7 @@ var ModifyProperties = &modifyProperty{
 }
 
 type modificationHandler struct {
-	registeredProperties map[string]func(loadedImage image.Image, propertyValue interface{}) (image.Image, error)
+	registeredProperties map[string]func(loadedImage image.Image, propertyValue interface{}, loadedImages map[string]image.Image) (image.Image, error)
 }
 
 var modificationHandlerInstance *modificationHandler
@@ -29,23 +29,24 @@ var once sync.Once
 func GetModificationHandler() *modificationHandler {
 	once.Do(func() {
 		modificationHandlerInstance = &modificationHandler{
-			registeredProperties: make(map[string]func(loadedImage image.Image, propertyValue interface{}) (image.Image, error)),
+			registeredProperties: make(map[string]func(loadedImage image.Image, propertyValue interface{}, loadedImages map[string]image.Image) (image.Image, error)),
 		}
 
 		modificationHandlerInstance.RegisterProperty("Grayscale", HandleGrayscale)
 		modificationHandlerInstance.RegisterProperty("Invert", HandleInvert)
+		modificationHandlerInstance.RegisterProperty("PasteImage", HandlePasteImage)
 	})
 
 	return modificationHandlerInstance
 }
 
 // Registers the given property to be handled using the given action function
-func (handler *modificationHandler) RegisterProperty(property string, action func(loadedImage image.Image, propertyValue interface{}) (image.Image, error)) {
+func (handler *modificationHandler) RegisterProperty(property string, action func(loadedImage image.Image, propertyValue interface{}, loadedImages map[string]image.Image) (image.Image, error)) {
 	handler.registeredProperties[property] = action
 }
 
 // Handles modification
-func (handler *modificationHandler) HandleModification(modImage image.Image, action iqlTypes.IQLAction) (image.Image, error) {
+func (handler *modificationHandler) HandleModification(modImage image.Image, action iqlTypes.IQLAction, loadedImages map[string]image.Image) (image.Image, error) {
 	modifiedImage := modImage
 
 	for property, value := range action.Properties {
@@ -55,7 +56,7 @@ func (handler *modificationHandler) HandleModification(modImage image.Image, act
 
 		fmt.Println(value)
 
-		newImage, err := handler.registeredProperties[property](modifiedImage, value)
+		newImage, err := handler.registeredProperties[property](modifiedImage, value, loadedImages)
 
 		if err != nil {
 			return nil, err

@@ -5,6 +5,11 @@
 				"ActionType": "LOAD_IMAGE",
 				"Url": "https://res.discorddungeons.me/images/achievements/killimanjaro/1.png",
 				"ImageName": "image1"
+			},
+			{
+				"ActionType": "LOAD_IMAGE",
+				"Url": "https://res.discorddungeons.me/icon.png",
+				"ImageName": "icon"
 			}
 		]
 	},
@@ -14,7 +19,19 @@
 				"ActionType": "MODIFY_IMAGE",
 				"ImageName": "image1",
 				"Properties": {
-					"Grayscale": 1
+					"PasteImage": {
+						"ImageName": "icon",
+						"PasteAt": [0,0]
+					}
+				}
+			},
+			{
+				"ActionType": "MODIFY_IMAGE",
+				"ImageName": "image1",
+				"Properties": {
+					"Grayscale": {
+						"IncludeTransparency": true
+					}
 				}
 			}
 		]
