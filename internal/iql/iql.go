@@ -49,6 +49,47 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 			}
 
 			runner.loadedImages[action.ImageName] = image
+		case iqlTypes.ActionTypes.LOAD_SPRITES:
+			if action.Url == "" {
+				return nil, errors.New("no url provided for spritesheet")
+			}
+
+			if action.ImageName == "" {
+				return nil, errors.New("no name provided for image")
+			}
+
+			fmt.Println(action)
+
+			spriteSizeData, ok := action.Properties["SpriteSize"].([]interface{})
+
+			if !ok {
+				return nil, fmt.Errorf("property SpriteSize of LOAD_SPRITES action got value of type %T, but wanted []int", action.Properties["SpriteSize"])
+			}
+
+			spriteSize := make([]int, len(spriteSizeData))
+
+			for i := range spriteSizeData {
+				size, ok := spriteSizeData[i].(float64)
+
+				if !ok {
+					return nil, fmt.Errorf("property SpriteSize[%d] of LOAD_SPRITES action got value of type %T, but wanted float", i, spriteSizeData[i])
+				}
+
+				spriteSize[i] = int(size)
+			}
+
+			images, err := LoadSpritesheet(action.Url, spriteSize, action.ImageName)
+
+			// image, err := LoadImageAction(action.Url)
+
+			if err != nil {
+				return nil, err
+			}
+
+			for name, img := range images {
+				runner.loadedImages[name] = img
+			}
+
 		}
 		fmt.Println(action)
 	}
