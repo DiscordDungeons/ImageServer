@@ -7,6 +7,7 @@ type actionType struct {
 	LOAD_SPRITES ActionType
 	MODIFY_IMAGE ActionType
 	RETURN_IMAGE ActionType
+	NEW_IMAGE    ActionType
 }
 
 var ActionTypes = &actionType{
@@ -14,4 +15,5 @@ var ActionTypes = &actionType{
 	LOAD_SPRITES: "LOAD_SPRITES",
 	MODIFY_IMAGE: "MODIFY_IMAGE",
 	RETURN_IMAGE: "RETURN_IMAGE",
+	NEW_IMAGE:    "NEW_IMAGE",
 }

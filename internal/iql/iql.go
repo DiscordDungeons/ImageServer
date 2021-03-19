@@ -96,6 +96,33 @@ func (runner *IQLRunner) RunIQL(code string) (map[string]image.Image, error) {
 
 	for _, action := range runner.tree.Generate.Actions {
 		switch action.ActionType {
+		case iqlTypes.ActionTypes.NEW_IMAGE:
+			if action.ImageName == "" {
+				return nil, errors.New("no image name provided for new image")
+			}
+
+			imageSizeData, ok := action.Properties["Size"].([]interface{})
+
+			if !ok {
+				return nil, fmt.Errorf("property Size of NEW_IMAGE action got value of type %T, but wanted []int", action.Properties["Size"])
+			}
+
+			imageSize := make([]int, len(imageSizeData))
+
+			for i := range imageSizeData {
+				size, ok := imageSizeData[i].(float64)
+
+				if !ok {
+					return nil, fmt.Errorf("property Size[%d] of NEW_IMAGE action got value of type %T, but wanted int", i, imageSizeData[i])
+				}
+
+				imageSize[i] = int(size)
+			}
+
+			img := image.NewRGBA(image.Rect(0, 0, imageSize[0], imageSize[1]))
+
+			runner.loadedImages[action.ImageName] = img
+
 		case iqlTypes.ActionTypes.MODIFY_IMAGE:
 			if action.ImageName == "" {
 				return nil, errors.New("no image name provided for action")
