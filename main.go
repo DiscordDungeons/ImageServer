@@ -1,19 +1,29 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"image/png"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"discorddungeons.me/imageserver/cache"
 	"discorddungeons.me/imageserver/iql"
 	"github.com/joho/godotenv"
 )
+
+type CacheConfig struct {
+	ENABLE_CACHE    bool
+	CACHE_DIRECTORY string
+}
+
+var cacheConfig CacheConfig
+
+var cacheInstance *cache.Cache
 
 func statusHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "OK")
@@ -26,6 +36,16 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		log.Printf("Error reading body: %v", err)
 		http.Error(w, "can't read body", http.StatusBadRequest)
 		return
+	}
+
+	if cacheConfig.ENABLE_CACHE {
+		hash := cacheInstance.ComputeHash(body)
+
+		if cacheInstance.HasFile(hash + ".png") {
+			http.ServeFile(w, req, cacheConfig.CACHE_DIRECTORY+"/"+hash+".png")
+
+			return
+		}
 	}
 
 	runner := iql.NewIQLRunner()
@@ -43,23 +63,28 @@ func handler(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		buf := new(bytes.Buffer)
+		w.Header().Set("Content-Type", "image/png")
 
-		err := png.Encode(buf, img)
+		err := png.Encode(w, img)
 
 		if err != nil {
 			http.Error(w, "can't return image", http.StatusBadRequest)
 			return
 		}
 
-		data := buf.Bytes()
+		if cacheConfig.ENABLE_CACHE {
+			hash := cacheInstance.ComputeHash(body)
 
-		w.Header().Set("Content-Type", "image/png")
+			err := cacheInstance.SavePngFile(hash+".png", img)
 
-		w.Write(data)
+			if err != nil {
+				fmt.Println("Can't save file to cache: " + err.Error())
+			}
+		}
 
 		i++
 	}
+
 }
 
 func main() {
@@ -67,6 +92,21 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal("Error loading .env file")
 	// }
+
+	enableCache := true
+
+	c, err := strconv.ParseBool(os.Getenv("ENABLE_CACHE"))
+
+	if err == nil {
+		enableCache = c
+	}
+
+	cacheConfig = CacheConfig{
+		ENABLE_CACHE:    enableCache,
+		CACHE_DIRECTORY: os.Getenv("CACHE_DIRECTORY"),
+	}
+
+	cacheInstance = cache.NewCache(cacheConfig.CACHE_DIRECTORY)
 
 	serverPort := os.Getenv("SERVER_PORT")
 

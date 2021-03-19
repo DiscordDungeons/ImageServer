@@ -50,7 +50,7 @@ func HandlePasteImage(loadedImage image.Image, propertyValue interface{}, loaded
 
 	dst = imaging.Paste(dst, loadedImage, image.Pt(0, 0))
 
-	dst = imaging.Paste(dst, loadedImages[imageName], image.Pt(int(pasteAt[0]), int(pasteAt[1])))
+	dst = imaging.Overlay(dst, loadedImages[imageName], image.Pt(int(pasteAt[0]), int(pasteAt[1])), 255)
 
 	return dst, nil
 }
