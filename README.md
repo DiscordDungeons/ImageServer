@@ -1,6 +1,10 @@
 # ImageServer
 Small microservice for image generation.
 
+# License
+
+ImageServer is licensed under the EUPL-1.2-or-later.
+
 # Environment Variables
 
 | Property    | Type   | Description                  |
