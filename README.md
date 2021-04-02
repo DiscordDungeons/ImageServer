@@ -22,3 +22,9 @@ It is recommended that you attach a permanent volume mounted to your cache folde
 Run with
 
 `docker run -p 8080:8080 --env-file .env discorddungeons/imageserver`
+
+# IQL
+
+ImageServer uses a custom JSON Schema known as IQL for specifying the image generation.
+
+The docs can be found in the [/docs/iql](/docs/iql) folder.
