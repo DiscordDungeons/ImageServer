@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"image/png"
 	"io/ioutil"
@@ -16,6 +17,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const VERSION = "1.0.1"
+
 type CacheConfig struct {
 	ENABLE_CACHE    bool
 	CACHE_DIRECTORY string
@@ -25,16 +28,71 @@ var cacheConfig CacheConfig
 
 var cacheInstance *cache.Cache
 
-func statusHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "OK")
+// Sends the data as a JSON string to a http response.
+func sendJSON(w http.ResponseWriter, data map[string]interface{}, httpStatus int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(httpStatus)
+
+	if _, ok := data["statusCode"]; !ok {
+		// No status code in the data
+		data["statusCode"] = httpStatus
+	}
+
+	resp, err := json.MarshalIndent(data, "", "  ")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	fmt.Fprint(w, string(resp))
 }
 
+// Sends an error to the responseWriter w, with the httpStatus, and an optional message
+func sendError(w http.ResponseWriter, httpStatus int, message string) {
+	data := make(map[string]interface{})
+
+	data["httpError"] = http.StatusText(httpStatus)
+
+	if len(message) != 0 {
+		data["error"] = message
+	}
+
+	sendJSON(w, data, httpStatus)
+}
+
+// Gets an environment variable by key, or fallbacks to the fallback if it's not defined.
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+// Handles requests to the /status endpoint
+func statusHandler(w http.ResponseWriter, req *http.Request) {
+	sendJSON(w, make(map[string]interface{}), 200)
+}
+
+// Handles requests to the / endpoint.
 func handler(w http.ResponseWriter, req *http.Request) {
+
+	if req.Method != "GET" && req.Method != "POST" {
+		sendError(w, http.StatusMethodNotAllowed, "")
+		return
+	}
+
+	if req.Method == "GET" {
+		data := make(map[string]interface{})
+
+		data["version"] = VERSION
+
+		sendJSON(w, data, http.StatusOK)
+		return
+	}
 
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Printf("Error reading body: %v", err)
-		http.Error(w, "can't read body", http.StatusBadRequest)
+		sendError(w, http.StatusBadRequest, "Can't read body")
 		return
 	}
 
@@ -53,7 +111,8 @@ func handler(w http.ResponseWriter, req *http.Request) {
 	res, err := runner.RunIQL(string(body))
 
 	if err != nil {
-		http.Error(w, err.Error(), 400)
+		sendError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	i := 0
@@ -68,7 +127,8 @@ func handler(w http.ResponseWriter, req *http.Request) {
 		err := png.Encode(w, img)
 
 		if err != nil {
-			http.Error(w, "can't return image", http.StatusBadRequest)
+			sendError(w, http.StatusBadRequest, "Can't return image")
+
 			return
 		}
 
@@ -87,6 +147,7 @@ func handler(w http.ResponseWriter, req *http.Request) {
 
 }
 
+// Executes the program
 func main() {
 	godotenv.Load()
 	// if err != nil {
@@ -95,7 +156,7 @@ func main() {
 
 	enableCache := true
 
-	c, err := strconv.ParseBool(os.Getenv("ENABLE_CACHE"))
+	c, err := strconv.ParseBool(getEnv("ENABLE_CACHE", "true"))
 
 	if err == nil {
 		enableCache = c
@@ -103,12 +164,12 @@ func main() {
 
 	cacheConfig = CacheConfig{
 		ENABLE_CACHE:    enableCache,
-		CACHE_DIRECTORY: os.Getenv("CACHE_DIRECTORY"),
+		CACHE_DIRECTORY: getEnv("CACHE_DIRECTORY", "cache"),
 	}
 
 	cacheInstance = cache.NewCache(cacheConfig.CACHE_DIRECTORY)
 
-	serverPort := os.Getenv("SERVER_PORT")
+	serverPort := getEnv("SERVER_PORT", "8080")
 
 	if !strings.HasPrefix(serverPort, ":") {
 		serverPort = fmt.Sprintf(":%s", serverPort)
