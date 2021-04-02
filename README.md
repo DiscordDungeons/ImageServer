@@ -17,6 +17,7 @@ ImageServer is licensed under the EUPL-1.2-or-later.
 
 ImageServer also comes as a Docker image, [`discorddungeons/imageserver`](https://hub.docker.com/repository/docker/discorddungeons/imageserver).
 
+It is recommended that you attach a permanent volume mounted to your cache folder when running the docker image.
 
 Run with
 
