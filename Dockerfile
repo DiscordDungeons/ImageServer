@@ -1,11 +1,4 @@
-FROM golang:alpine
-
-# Set env variables
-
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
+FROM golang:alpine as builder
 
 # Move to working directory /build
 WORKDIR /build
@@ -22,13 +15,18 @@ RUN go mod download
 
 
 # Build the application
-RUN go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
-# Move to /dist directory as the place for resulting binary folder
-WORKDIR /dist
+##### Deployment Image #####
 
-# Copy binary from build to main folder
-RUN cp /build/main .
+FROM scratch
+
+# Gotta copy the SSL certs, or no https
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Move to /bin directory as the place for resulting binary folder
+WORKDIR /bin
+
+COPY --from=builder /build/app .
 
 # Command to run when starting the container
-CMD ["/dist/main"]
+CMD ["./app"]
